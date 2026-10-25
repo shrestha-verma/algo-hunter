@@ -39,6 +39,7 @@ Algo Hunter acts as an autonomous visual engineering mentor. When you feed it cu
 Rather than executing raw untrusted code inside an unsafe local sandbox, Algo Hunter uses an LLM-driven Abstract Syntax Tree (AST) & runtime state synthesis pipeline.
 
 Execution Flow:
+```
 [User Code / Buggy Logic] + [Optional Custom Context]
           │
           ▼
@@ -55,7 +56,7 @@ Execution Flow:
   │
   ▼
 [Frontend: Monaco Editor + Interactive Memory Stepper + Mermaid.js Brain]
-
+```
 1. **Autonomous Input Synthesis:** If an engineer pastes raw logic without test inputs, the agent synthesizes canonical inputs (e.g., sorted arrays, palindromic strings, boundary-tested matrices) automatically. If custom input is provided, the agent strictly runs the simulation against that data.
 2. **Memory Frame Stepping:** The engine breaks down the algorithm into 5 to 7 sequential logical milestones, capturing exact variable values, active indices, and pointer states at each frame.
 3. **Continuous Knowledge Construction:** Every tackled problem is indexed into a persistent SQLite database, automatically updating the learner's visual Mind Map without manual note-taking.
