@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Algo Hunter - Visual DSA Agent</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#090909',
+        primaryColor: '#b45309',
+        primaryTextColor: '#fef08a',
+        primaryBorderColor: '#eab308',
+        lineColor: '#ca8a04',
+        secondaryColor: '#18181b',
+        tertiaryColor: '#090909'
+      }
+    });
+  </script>
+  
+  <style>
+    .glow-gold-sm { box-shadow: 0 0 10px -2px rgba(234, 179, 8, 0.4); }
+    .glow-gold { box-shadow: 0 0 20px -3px rgba(234, 179, 8, 0.35); }
+    
+    .rcb-card { transition: all 0.25s ease-in-out; }
+    .rcb-card:hover { border-color: rgba(234, 179, 8, 0.4); }
+
+    #mermaid-container {
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px;
+    }
+
+    #mermaid-container svg {
+      height: 100% !important;
+      min-height: 220px;
+      width: auto !important;
+      max-width: none !important;
+    }
+
+    @keyframes progress-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+    .animate-progress-shimmer {
+      animation: progress-shimmer 1.4s infinite ease-in-out;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #eab308; }
+  </style>
+</head>
+<body class="bg-[#080808] text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-black">
+
+  <!-- Header -->
+  <header class="border-b border-amber-500/20 bg-[#0e0e0e]/95 backdrop-blur px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-gradient-to-br from-amber-400 via-amber-500 to-red-600 text-black font-black px-2.5 py-1 rounded-lg text-sm tracking-wider font-mono glow-gold-sm border border-amber-300">
+        AH
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-white tracking-widest uppercase font-mono">
+          Algo <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-500">Hunter</span>
+        </h1>
+        <p class="text-[10px] text-zinc-400 font-mono">Autonomous Socratic DSA Engine & Visual Memory Stepper</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-4 text-xs font-mono">
+      <div class="flex items-center gap-2 bg-[#121212] border border-zinc-800 rounded-lg px-2.5 py-1">
+        <span class="text-zinc-500 text-[11px] font-mono">Workspace:</span>
+        <select id="user-dropdown" onchange="handleUserDropdownChange(this.value)" class="bg-[#080808] text-amber-400 font-mono text-xs font-bold border border-zinc-700/80 rounded px-2 py-0.5 outline-none cursor-pointer focus:border-amber-400">
+          <option value="shrestha">shrestha (Preloaded Demo)</option>
+          <option value="__new__">+ New User...</option>
+        </select>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/30 border border-amber-500/30 text-amber-400 font-semibold text-[11px]">
+        <span>Powered by Nebius & NVIDIA Nemotron</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-5">
+    
+    <!-- Left Column (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
+      
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-4 flex flex-col gap-3 shadow-xl">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-amber-400 font-mono">Monaco Code Arena</label>
+          <div class="flex items-center gap-2">
+            <label class="text-[10px] uppercase font-mono text-zinc-400">Lang:</label>
+            <select id="language-select" onchange="changeLanguage()" class="bg-[#080808] text-amber-300 text-xs font-mono border border-zinc-700 rounded px-2 py-0.5 focus:outline-none focus:border-amber-400 cursor-pointer">
+              <option value="python">Python</option>
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] font-mono text-zinc-400 bg-[#090909] px-3 py-1.5 rounded-lg border border-zinc-800/80">
+          <span class="flex items-center gap-1.5 text-zinc-300">
+            <span class="text-amber-400">💡</span> Paste any algorithm logic or pick from Solved History
+          </span>
+          <button onclick="clearEditor()" class="text-[10px] text-zinc-500 hover:text-amber-400 underline">Clear</button>
+        </div>
+
+        <div id="monaco-editor-container" class="w-full h-52 rounded-xl overflow-hidden border border-zinc-800 bg-[#090909]"></div>
+
+        <input id="context-input" type="text" class="w-full bg-[#090909] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 font-mono focus:outline-none focus:border-amber-400 transition-all placeholder:text-zinc-600" placeholder="Custom inputs (Leave blank for autonomous test synthesis)" value="" />
+
+        <div class="relative w-full">
+          <button id="analyze-btn" onclick="runAnalysis()" class="w-full relative overflow-hidden bg-gradient-to-r from-red-600 via-amber-500 to-amber-400 hover:from-red-500 hover:to-amber-300 text-black font-black py-2.5 rounded-xl text-xs tracking-wider uppercase font-mono transition-all duration-300 glow-gold-sm active:scale-[0.98] flex justify-center items-center gap-2">
+            <svg id="btn-spinner" class="hidden animate-spin h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span id="btn-text">Run Analysis</span>
+          </button>
+          
+          <div id="btn-progress-bar" class="hidden absolute bottom-0 left-0 right-0 h-1 bg-black/40 rounded-b-xl overflow-hidden">
+            <div class="w-1/2 h-full bg-black/80 animate-progress-shimmer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guided Hints & Resolution -->
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-4 flex flex-col gap-3 shadow-xl">
+        <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono border-b border-zinc-800 pb-2">
+          Guided Hints & Resolution
+        </h3>
+        
+        <div class="bg-[#080808] border border-zinc-800 rounded-xl p-3">
+          <p class="text-[10px] uppercase font-bold text-amber-400 font-mono mb-1">[HINT 1: INTUITIVE WORKFLOW NUDGE]</p>
+          <p id="hint-1-text" class="text-xs text-zinc-300 leading-relaxed italic">Run code analysis to receive your first hint.</p>
+        </div>
+
+        <div class="bg-[#080808] border border-zinc-800 rounded-xl p-3">
+          <p class="text-[10px] uppercase font-bold text-amber-500 font-mono mb-1">[HINT 2: THE INVARIANT PRINCIPLE]</p>
+          <p id="hint-2-text" class="text-xs text-zinc-300 leading-relaxed italic">A second hint will unlock if you are stuck.</p>
+        </div>
+
+        <details class="group bg-[#080808] border border-amber-500/30 rounded-xl p-3.5 cursor-pointer">
+          <summary class="text-xs font-bold text-amber-400 font-mono uppercase flex justify-between items-center select-none">
+            <span>[REVEAL INTUITIVE WORKFLOW & OPTIMAL CODE]</span>
+            <span class="group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="mt-3 pt-3 border-t border-zinc-800 space-y-3">
+            <div>
+              <p class="text-[10px] uppercase font-bold text-amber-300 font-mono mb-1">Visual Concept & Logic Breakdown</p>
+              <p id="final-exp" class="text-xs text-zinc-200 leading-relaxed font-sans bg-zinc-950 p-2.5 rounded-lg border border-zinc-800/80 max-h-40 overflow-y-auto">No solution loaded yet.</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase font-bold text-emerald-400 font-mono mb-1">Production-Grade Corrected Code</p>
+              <pre id="final-code" class="p-3 bg-black rounded-lg text-emerald-400 text-[11px] overflow-x-auto max-h-72 overflow-y-auto border border-zinc-800 font-mono select-all leading-normal">// Optimal solution will appear here</pre>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Solved Problems History -->
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-4 shadow-xl">
+        <div class="flex justify-between items-center mb-2.5 border-b border-zinc-800 pb-2">
+          <div class="flex items-center gap-2">
+            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">Solved Problems History</h3>
+            <span id="problem-count" class="text-[10px] font-mono bg-red-950 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">0 Solved</span>
+          </div>
+          <span class="text-[10px] text-zinc-500 font-mono">Click item to restore code</span>
+        </div>
+        <div id="history-list" class="space-y-2 text-xs font-mono max-h-48 overflow-y-auto pr-1">
+          <p class="text-zinc-500 italic text-[11px]">No problems in history yet.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+
+      <!-- Metrics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-3">
+          <p class="text-[10px] font-mono uppercase text-zinc-400">Pattern / Topic</p>
+          <p id="card-pattern" class="text-xs font-extrabold font-mono text-amber-400 truncate mt-1">--</p>
+        </div>
+        <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-3">
+          <p class="text-[10px] font-mono uppercase text-zinc-400">Time Complexity</p>
+          <p id="card-time" class="text-xs font-extrabold font-mono text-red-400 mt-1">--</p>
+        </div>
+        <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-3">
+          <p class="text-[10px] font-mono uppercase text-zinc-400">Space Complexity</p>
+          <p id="card-space" class="text-xs font-extrabold font-mono text-yellow-300 mt-1">--</p>
+        </div>
+        <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-3">
+          <p class="text-[10px] font-mono uppercase text-zinc-400">Tavily Target Firms</p>
+          <div id="card-tags" class="flex flex-wrap gap-1 mt-1 text-[10px] font-mono text-amber-300">
+            <span class="text-zinc-500">Live search</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Tracer -->
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-5 shadow-xl">
+        <div class="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2.5">
+          <div>
+            <h2 class="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400 inline-block glow-gold-sm"></span>
+              Execution Tracer
+            </h2>
+            <p class="text-[11px] text-zinc-400 font-mono">Dynamic pointer positioning & memory state</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="prev-step-btn" onclick="prevStep()" class="px-3 py-1 bg-black hover:bg-zinc-800 text-amber-400 text-xs font-mono font-bold rounded-lg border border-amber-500/30 transition">Prev</button>
+            <span id="step-indicator" class="text-xs font-mono text-amber-400 font-bold px-1.5">Step 0/0</span>
+            <button id="next-step-btn" onclick="nextStep()" class="px-3 py-1 bg-black hover:bg-zinc-800 text-amber-400 text-xs font-mono font-bold rounded-lg border border-amber-500/30 transition">Next</button>
+          </div>
+        </div>
+
+        <div class="bg-[#080808] border border-zinc-800/80 rounded-xl p-5 flex flex-col items-center justify-center min-h-[145px]">
+          <div id="array-container" class="flex flex-wrap gap-3 items-end justify-center min-h-[80px]">
+            <span class="text-xs font-mono text-zinc-500">Run analysis to generate visual execution trace</span>
+          </div>
+        </div>
+
+        <!-- 3-Part Color-Coded Algorithmic Step Reasoning -->
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="md:col-span-2 bg-[#080808] border border-zinc-800 rounded-xl p-4">
+            <p class="text-[11px] uppercase font-bold text-amber-400 mb-2.5 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              Algorithmic Step Reasoning (Intuitive Workflow)
+            </p>
+            <div id="step-desc" class="text-zinc-200 text-xs leading-relaxed font-sans font-normal">
+              Waiting for analysis...
+            </div>
+          </div>
+          <div class="bg-[#080808] border border-zinc-800 rounded-xl p-3.5">
+            <p class="text-[10px] uppercase font-bold text-red-400 mb-1">Live Variables</p>
+            <pre id="step-vars" class="text-amber-200 text-[11px] whitespace-pre-wrap">{}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tavily Interview Question Radar -->
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-4 shadow-xl">
+        <div class="flex justify-between items-center mb-2.5 border-b border-zinc-800 pb-2">
+          <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">Tavily Interview Question Radar</h3>
+          <span class="text-[10px] text-zinc-500 font-mono">Click card to load challenge & inputs</span>
+        </div>
+        <div id="tavily-questions-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+          <p class="text-zinc-500 italic text-[11px] col-span-2">Run analysis to discover questions asked by top tech firms.</p>
+        </div>
+      </div>
+
+      <!-- Cumulative Mind Map -->
+      <div class="rcb-card bg-[#111111] border border-zinc-800/90 rounded-2xl p-5 shadow-xl min-h-[280px]">
+        <div class="flex justify-between items-center mb-3 border-b border-zinc-800 pb-2">
+          <h2 class="text-xs font-bold text-amber-400 uppercase font-mono tracking-wider">Cumulative Cognitive Knowledge Graph</h2>
+          <span class="text-[11px] font-mono text-zinc-500">Persistent Architecture</span>
+        </div>
+        <div class="bg-[#080808] border border-zinc-800 rounded-xl p-4 flex items-center justify-start min-h-[220px] w-full overflow-hidden">
+          <div id="mermaid-container" class="w-full h-full flex justify-start items-center">
+            <span class="text-xs font-mono text-zinc-600">Solve problems to build your mind map hierarchy</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let editor = null;
+    let executionSteps = [];
+    let currentStepIdx = 0;
+    let currentUsername = localStorage.getItem("algo_hunter_user") || "shrestha";
+    let userHistory = [];
+    let loadingInterval = null;
+
+    const CANONICAL_TITLES = {
+      "spiral matrix": "Spiral Matrix",
+      "valid palindrome": "Valid Palindrome",
+      "reverse string": "Reverse String",
+      "two sum ii": "Two Sum II",
+      "three sum": "3Sum",
+      "binary search": "Binary Search",
+      "trapping rain water": "Trapping Rain Water",
+      "palindrome linked list": "Palindrome Linked List"
+    };
+
+    function normalizeProblemName(name) {
+      if (!name) return "";
+      let n = name.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
+      
+      if (n.includes("spiral")) return "spiral matrix";
+      if (n.includes("palindrome") && (n.includes("linked") || n.includes("list"))) return "palindrome linked list";
+      if (n.includes("palindrome")) return "valid palindrome";
+      if (n.includes("reverse string") || n.includes("reverse a string")) return "reverse string";
+      if (n.includes("two sum")) return "two sum ii";
+      if (n.includes("3sum") || n.includes("three sum") || n.includes("3sun")) return "three sum";
+      if (n.includes("binary search")) return "binary search";
+      if (n.includes("rain water") || n.includes("trapping")) return "trapping rain water";
+      
+      return n;
+    }
+
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+        value: '// Paste any C++, Python, or Java algorithm to analyze\n',
+        language: 'python',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        fontSize: 13,
+        minimap: { enabled: false },
+        lineNumbers: 'on',
+        roundedSelection: true,
+        scrollBeyondLastLine: false,
+        padding: { top: 12, bottom: 12 }
+      });
+
+      loadUsersList();
+      loadUserHistory(currentUsername);
+    });
+
+    async function loadUsersList() {
+      try {
+        const res = await fetch("/users/all");
+        const data = await res.json();
+        const dropdown = document.getElementById("user-dropdown");
+        if (!dropdown) return;
+
+        dropdown.innerHTML = "";
+        const users = data.users || ["shrestha"];
+        users.forEach(u => {
+          const opt = document.createElement("option");
+          opt.value = u;
+          opt.innerText = u === "shrestha" ? "shrestha (Preloaded Demo)" : u;
+          if (u === currentUsername) opt.selected = true;
+          dropdown.appendChild(opt);
+        });
+
+        const newOpt = document.createElement("option");
+        newOpt.value = "__new__";
+        newOpt.innerText = "+ New User...";
+        dropdown.appendChild(newOpt);
+      } catch (e) {
+        console.error("Failed to load users list:", e);
+      }
+    }
+
+    async function handleUserDropdownChange(val) {
+      if (val === "__new__") {
+        const name = prompt("Enter a new username for a fresh workspace:");
+        if (name && name.trim()) {
+          const clean = name.trim().toLowerCase();
+          try {
+            await fetch("/user/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: clean })
+            });
+            currentUsername = clean;
+            localStorage.setItem("algo_hunter_user", currentUsername);
+            await loadUsersList();
+            await loadUserHistory(currentUsername);
+          } catch (e) {
+            alert("Login failed: " + e.message);
+          }
+        } else {
+          document.getElementById("user-dropdown").value = currentUsername;
+        }
+      } else {
+        currentUsername = val;
+        localStorage.setItem("algo_hunter_user", currentUsername);
+        await loadUserHistory(currentUsername);
+      }
+    }
+
+    function changeLanguage() {
+      if (!editor) return;
+      const lang = document.getElementById("language-select").value;
+      monaco.editor.setModelLanguage(editor.getModel(), lang);
+    }
+
+    function clearEditor() {
+      if (!editor) return;
+      editor.setValue('');
+      document.getElementById("context-input").value = '';
+    }
+
+    function detectAndSwitchLanguage(codeStr) {
+      let targetLang = "python";
+      const str = codeStr || "";
+
+      if (str.includes("vector<") || str.includes("#include") || str.includes("cout <<") || (str.includes("int ") && str.includes(";")) || str.includes("ListNode*")) {
+        targetLang = "cpp";
+      } else if (str.includes("public class") || str.includes("System.out.println") || str.includes("public static void")) {
+        targetLang = "java";
+      } else if (str.includes("def ") || str.includes("import ") || str.includes("print(")) {
+        targetLang = "python";
+      }
+
+      const langSelect = document.getElementById("language-select");
+      if (langSelect && editor) {
+        langSelect.value = targetLang;
+        monaco.editor.setModelLanguage(editor.getModel(), targetLang);
+      }
+    }
+
+    function resetLivePanels() {
+      document.getElementById("hint-1-text").innerText = "Run code analysis or select a solved problem to view hints.";
+      document.getElementById("hint-2-text").innerText = "A second hint will unlock if you are stuck.";
+      document.getElementById("final-exp").innerText = "No solution loaded yet.";
+      document.getElementById("final-code").innerText = "// Optimal solution will appear here";
+      
+      executionSteps = [];
+      currentStepIdx = 0;
+      renderCurrentStep();
+      
+      document.getElementById("card-pattern").innerText = "--";
+      document.getElementById("card-time").innerText = "--";
+      document.getElementById("card-space").innerText = "--";
+      document.getElementById("card-tags").innerHTML = `<span class="text-zinc-500">Live search</span>`;
+      document.getElementById("tavily-questions-list").innerHTML = `<p class="text-zinc-500 italic text-[11px] col-span-2">Run analysis to discover questions asked by top tech firms.</p>`;
+    }
+
+    function loadHistoricalProblem(item) {
+      if (!editor) return;
+      if (item.code_snippet) {
+        editor.setValue(item.code_snippet);
+        detectAndSwitchLanguage(item.code_snippet);
+      }
+      
+      document.getElementById("context-input").value = "";
+
+      const norm = normalizeProblemName(item.problem_name);
+      const displayTitle = CANONICAL_TITLES[norm] || item.problem_name;
+
+      document.getElementById("card-pattern").innerText = `${item.topic} / ${item.subtopic_pattern}`;
+      document.getElementById("card-time").innerText = item.time_complexity || "--";
+      document.getElementById("card-space").innerText = item.space_complexity || "--";
+
+      if (item.hints) {
+        document.getElementById("hint-1-text").innerText = item.hints.hint_1 || "Review pointer logic.";
+        document.getElementById("hint-2-text").innerText = item.hints.hint_2 || "Review loop invariants.";
+      }
+      if (item.final_solution) {
+        document.getElementById("final-exp").innerText = item.final_solution.explanation || "Optimal solution loaded from history.";
+        document.getElementById("final-code").innerText = item.final_solution.code || "// Solution loaded";
+      }
+      if (item.execution_trace) {
+        executionSteps = item.execution_trace;
+        currentStepIdx = 0;
+        renderCurrentStep();
+      }
+    }
+
+    function loadStarterSkeleton(starterCode, contextVal) {
+      if (!editor) return;
+      detectAndSwitchLanguage(starterCode);
+      editor.setValue(starterCode);
+      
+      document.getElementById("context-input").value = contextVal || "";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function loadUserHistory(username) {
+      try {
+        const res = await fetch(`/user/${username}/history`);
+        const data = await res.json();
+        userHistory = data.history || [];
+        updateHistoryUI();
+        renderMindMap();
+
+        resetLivePanels();
+        if (editor) editor.setValue('// Paste any C++, Python, or Java algorithm to analyze\n');
+        document.getElementById("context-input").value = "";
+      } catch (e) {
+        console.error("Failed to load user history:", e);
+      }
+    }
+
+    async function runAnalysis() {
+      const code = editor ? editor.getValue().trim() : "";
+      const context = document.getElementById("context-input").value.trim();
+      const btn = document.getElementById("analyze-btn");
+      const btnText = document.getElementById("btn-text");
+      const btnSpinner = document.getElementById("btn-spinner");
+      const btnProgressBar = document.getElementById("btn-progress-bar");
+
+      if (!code) return alert("Please enter your DSA code!");
+
+      btn.disabled = true;
+      btnSpinner.classList.remove("hidden");
+      btnProgressBar.classList.remove("hidden");
+      btn.classList.add("opacity-80");
+
+      const loadingPhrases = [
+        "Analyzing Logic via Nemotron...",
+        "Synthesizing Visual Execution Trace...",
+        "Evaluating Time & Space Bounds...",
+        "Mapping Cognitive DSA Brain..."
+      ];
+      let phraseIdx = 0;
+      btnText.innerText = loadingPhrases[phraseIdx];
+      
+      loadingInterval = setInterval(() => {
+        phraseIdx = (phraseIdx + 1) % loadingPhrases.length;
+        btnText.innerText = loadingPhrases[phraseIdx];
+      }, 1800);
+
+      try {
+        const response = await fetch("/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username: currentUsername,
+            code_snippet: code, 
+            problem_context: context 
+          })
+        });
+        
+        const data = await response.json();
+
+        clearInterval(loadingInterval);
+        btn.disabled = false;
+        btnSpinner.classList.add("hidden");
+        btnProgressBar.classList.add("hidden");
+        btn.classList.remove("opacity-80");
+        btnText.innerText = "Run Analysis";
+
+        if (data.error) return alert("Analysis Error: " + data.error);
+
+        document.getElementById("card-pattern").innerText = (data.topic || "DSA") + " / " + (data.subtopic_pattern || "Simulation");
+        document.getElementById("card-time").innerText = data.time_complexity || "O(N)";
+        document.getElementById("card-space").innerText = data.space_complexity || "O(1)";
+
+        const tagsBox = document.getElementById("card-tags");
+        tagsBox.innerHTML = "";
+        const tags = data.company_tags || ["Google", "Amazon"];
+        tags.forEach(t => {
+          const span = document.createElement("span");
+          span.className = "bg-red-950/80 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded";
+          span.innerText = t;
+          tagsBox.appendChild(span);
+        });
+
+        // --- SAFE TAVILY RADAR CARDS ---
+        const qList = document.getElementById("tavily-questions-list");
+        qList.innerHTML = "";
+        const questions = data.suggested_questions || [];
+        if (questions.length === 0) {
+          qList.innerHTML = `<p class="text-zinc-500 italic text-[11px] col-span-2">No additional questions fetched.</p>`;
+        } else {
+          questions.forEach(q => {
+            const card = document.createElement("div");
+            card.className = "p-3 bg-[#090909] border border-zinc-800 rounded-xl hover:border-amber-500/60 transition flex flex-col justify-between gap-2.5";
+            
+            const infoDiv = document.createElement("div");
+            
+            const topRow = document.createElement("div");
+            topRow.className = "flex justify-between items-start gap-2";
+            
+            const titleSpan = document.createElement("span");
+            titleSpan.className = "font-bold text-zinc-100 text-xs";
+            titleSpan.innerText = q.title || "Interview Challenge";
+            
+            const diffSpan = document.createElement("span");
+            diffSpan.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30";
+            diffSpan.innerText = q.difficulty || "Medium";
+            
+            topRow.appendChild(titleSpan);
+            topRow.appendChild(diffSpan);
+            
+            const companySpan = document.createElement("span");
+            companySpan.className = "text-[10px] text-amber-400 font-mono block mt-0.5";
+            companySpan.innerText = `Asked at ${q.company || "Top Tech"}`;
+            
+            const descP = document.createElement("p");
+            descP.className = "text-[11px] text-zinc-300 font-sans mt-1.5 leading-snug whitespace-pre-line";
+            descP.innerText = q.description || "";
+            
+            const constraintsDiv = document.createElement("div");
+            constraintsDiv.className = "text-[10px] font-mono mt-2 bg-black/60 p-1.5 rounded border border-zinc-800/80 break-words";
+            constraintsDiv.innerHTML = `<b class="text-amber-400">Constraints:</b> <span class="text-zinc-300">${(q.constraints || "Standard bounds").replace(/<[^>]*>?/gm, '')}</span>`;
+            
+            infoDiv.appendChild(topRow);
+            infoDiv.appendChild(companySpan);
+            infoDiv.appendChild(descP);
+            infoDiv.appendChild(constraintsDiv);
+            
+            const loadBtn = document.createElement("button");
+            loadBtn.className = "w-full text-center text-[10px] text-amber-400 bg-zinc-900 border border-zinc-700/80 hover:border-amber-400 py-1.5 rounded-lg transition font-mono mt-1 font-semibold";
+            loadBtn.innerText = "Load Challenge & Inputs →";
+            loadBtn.onclick = () => loadStarterSkeleton(q.starter_code || "// Solve problem here", q.context || "");
+            
+            card.appendChild(infoDiv);
+            card.appendChild(loadBtn);
+            qList.appendChild(card);
+          });
+        }
+
+        // Hints
+        document.getElementById("hint-1-text").innerText = data.hints?.hint_1 || "Check your pointer condition.";
+        document.getElementById("hint-2-text").innerText = data.hints?.hint_2 || "Exploit the boundary constraints.";
+
+        // Optimal Solution Drawer
+        document.getElementById("final-exp").innerText = data.final_solution?.explanation || "Optimal solution:";
+        document.getElementById("final-code").innerText = data.final_solution?.code || "// Code here";
+
+        // Execution Trace
+        executionSteps = data.execution_trace || [];
+        currentStepIdx = 0;
+        renderCurrentStep();
+
+        // Refresh History list and Mind Map in background
+        const res = await fetch(`/user/${currentUsername}/history`);
+        const hData = await res.json();
+        userHistory = hData.history || [];
+        updateHistoryUI();
+        renderMindMap();
+
+      } catch (err) {
+        clearInterval(loadingInterval);
+        btn.disabled = false;
+        btnSpinner.classList.add("hidden");
+        btnProgressBar.classList.add("hidden");
+        btn.classList.remove("opacity-80");
+        btnText.innerText = "Run Analysis";
+        alert("Failed to connect: " + err.message);
+      }
+    }
+
+    // Smart 1D Array, Character Strings & 2D Grid Visualizer
+    function renderCurrentStep() {
+      const container = document.getElementById("array-container");
+      const indicator = document.getElementById("step-indicator");
+      const desc = document.getElementById("step-desc");
+      const vars = document.getElementById("step-vars");
+      const prevBtn = document.getElementById("prev-step-btn");
+      const nextBtn = document.getElementById("next-step-btn");
+
+      if (!executionSteps || executionSteps.length === 0) {
+        container.innerHTML = `<span class="text-xs font-mono text-zinc-500">Run analysis to generate visual execution trace</span>`;
+        indicator.innerText = "Step 0/0";
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        desc.innerText = "Waiting for analysis...";
+        vars.innerText = "{}";
+        return;
+      }
+
+      indicator.innerText = `Step ${currentStepIdx + 1}/${executionSteps.length}`;
+      if (prevBtn) {
+        prevBtn.disabled = currentStepIdx === 0;
+        prevBtn.style.opacity = currentStepIdx === 0 ? "0.4" : "1";
+      }
+      if (nextBtn) {
+        nextBtn.disabled = currentStepIdx === executionSteps.length - 1;
+        nextBtn.style.opacity = currentStepIdx === executionSteps.length - 1 ? "0.4" : "1";
+      }
+
+      const step = executionSteps[currentStepIdx];
+
+      // Parse active indices
+      const activeIdx = {};
+      if (step.active_indices) {
+        for (const [k, v] of Object.entries(step.active_indices)) {
+          if (!isNaN(parseInt(v))) activeIdx[k.toLowerCase()] = parseInt(v);
+        }
+      }
+      if (step.variables) {
+        const pointerKeys = ["low", "high", "mid", "left", "right", "top", "bottom", "i", "j", "col", "row", "slow", "fast", "first", "second", "prev", "curr"];
+        for (const [k, v] of Object.entries(step.variables)) {
+          const lowerK = k.toLowerCase();
+          if (pointerKeys.includes(lowerK) && !isNaN(parseInt(v))) {
+            activeIdx[lowerK] = parseInt(v);
+          }
+        }
+      }
+
+      // ROBUST LIVE VARIABLES: Model empty object {} dega toh activeIdx se populate hoga
+      let displayVars = (step.variables && Object.keys(step.variables).length > 0) 
+        ? step.variables 
+        : { ...activeIdx };
+
+      vars.innerText = JSON.stringify(displayVars, null, 2);
+
+      // --- BEAUTIFUL 3-PART STEP REASONING CARDS ---
+      const rawText = step.action_explanation || step.state_description || "Executing instruction...";
+      
+      const obsMatch = rawText.match(/\[Observation\]:?\s*([\s\S]*?)(?=\[The Conflict|\bThe Conflict|\n|$)/i);
+      const confMatch = rawText.match(/\[The Conflict(?:\s*\/\s*Bottleneck)?\]:?\s*([\s\S]*?)(?=\[The Action|\bThe Action|\n|$)/i);
+      const actMatch = rawText.match(/\[The Action\]:?\s*([\s\S]*)/i);
+
+      if (obsMatch || confMatch || actMatch) {
+        const obs = obsMatch ? obsMatch[1].trim() : "Pointers positioned at boundary indices.";
+        const conf = confMatch ? confMatch[1].trim() : "Evaluating invariant condition against bounds.";
+        const act = actMatch ? actMatch[1].trim() : "Narrowing search window safely.";
+
+        desc.innerHTML = `
+          <div class="space-y-2 text-[12px] font-sans">
+            <div class="bg-sky-950/30 border border-sky-500/30 rounded-lg p-2.5 flex flex-col gap-1">
+              <span class="text-[10px] font-bold font-mono tracking-wider text-sky-400 uppercase flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span> [1. OBSERVATION]
+              </span>
+              <p class="text-zinc-200 leading-relaxed font-mono text-[11px]">${obs}</p>
+            </div>
+
+            <div class="bg-amber-950/30 border border-amber-500/30 rounded-lg p-2.5 flex flex-col gap-1">
+              <span class="text-[10px] font-bold font-mono tracking-wider text-amber-400 uppercase flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> [2. THE CONFLICT / BOTTLENECK]
+              </span>
+              <p class="text-zinc-200 leading-relaxed font-sans text-xs">${conf}</p>
+            </div>
+
+            <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-2.5 flex flex-col gap-1">
+              <span class="text-[10px] font-bold font-mono tracking-wider text-emerald-400 uppercase flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> [3. THE ACTION]
+              </span>
+              <p class="text-emerald-200 leading-relaxed font-sans text-xs font-medium">${act}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        desc.innerHTML = `<p class="text-zinc-300 font-sans text-xs leading-relaxed p-2.5 bg-zinc-950 rounded-lg border border-zinc-800">${rawText}</p>`;
+      }
+
+      container.innerHTML = "";
+      
+      let rawElements = step.data_elements;
+      const ctxVal = document.getElementById("context-input").value;
+
+      // 2D MATRIX CHECK
+      const contextIs2D = ctxVal.includes("[[") && ctxVal.includes("]]");
+      if ((!Array.isArray(rawElements) || !Array.isArray(rawElements[0])) && contextIs2D) {
+        try {
+          const match = ctxVal.match(/=\s*(\[\[.*\]\])/);
+          if (match) rawElements = JSON.parse(match[1]);
+        } catch(e){}
+      }
+
+      const is2D = Array.isArray(rawElements) && rawElements.length > 0 && Array.isArray(rawElements[0]);
+
+      if (is2D) {
+        const gridWrapper = document.createElement("div");
+        gridWrapper.className = "flex flex-col gap-2 items-center justify-center p-2";
+
+        const topBound = activeIdx.top ?? 0;
+        const bottomBound = activeIdx.bottom ?? (rawElements.length - 1);
+        const leftBound = activeIdx.left ?? 0;
+        const rightBound = activeIdx.right ?? (rawElements[0].length - 1);
+        const currRow = activeIdx.row ?? activeIdx.top;
+        const currCol = activeIdx.col ?? activeIdx.left;
+
+        rawElements.forEach((row, rIdx) => {
+          const rowDiv = document.createElement("div");
+          rowDiv.className = "flex gap-2 items-center";
+
+          const rLabel = document.createElement("span");
+          rLabel.className = "text-[10px] font-mono text-zinc-600 w-4 text-right";
+          rLabel.innerText = `r${rIdx}`;
+          rowDiv.appendChild(rLabel);
+
+          row.forEach((val, cIdx) => {
+            const cell = document.createElement("div");
+            
+            const isInsideBounds = (rIdx >= topBound && rIdx <= bottomBound && cIdx >= leftBound && cIdx <= rightBound);
+            const isCurrentActive = (rIdx === currRow && cIdx === currCol);
+
+            let cellStyle = "bg-[#121212] border-zinc-800 text-zinc-500 opacity-30";
+            if (isInsideBounds) {
+              if (isCurrentActive) {
+                cellStyle = "bg-amber-400 border-amber-300 text-black font-black glow-gold scale-110 shadow-lg";
+              } else {
+                cellStyle = "bg-[#1c1917] border-amber-500/70 text-amber-300 font-bold";
+              }
+            }
+
+            cell.className = `w-11 h-11 min-w-[44px] flex items-center justify-center rounded-xl font-mono text-xs border transition-all duration-200 ${cellStyle}`;
+            cell.innerText = val;
+            rowDiv.appendChild(cell);
+          });
+
+          gridWrapper.appendChild(rowDiv);
+        });
+
+        const boundsBar = document.createElement("div");
+        boundsBar.className = "flex gap-3 text-[10px] font-mono mt-2 text-zinc-400 border-t border-zinc-800/80 pt-1.5";
+        boundsBar.innerHTML = `
+          <span>TOP: <b class="text-amber-400">${topBound}</b></span>
+          <span>BOTTOM: <b class="text-amber-400">${bottomBound}</b></span>
+          <span>LEFT: <b class="text-amber-400">${leftBound}</b></span>
+          <span>RIGHT: <b class="text-amber-400">${rightBound}</b></span>
+        `;
+        gridWrapper.appendChild(boundsBar);
+        container.appendChild(gridWrapper);
+
+      } else {
+        const elementsList = Array.isArray(rawElements) ? rawElements : [1, 2, 3, 4, 5];
+        elementsList.forEach((val, i) => {
+          const matchingPointers = [];
+          for (const [ptrName, ptrIdx] of Object.entries(activeIdx)) {
+            if (ptrIdx === i && !["top", "bottom"].includes(ptrName)) {
+              matchingPointers.push(ptrName.toUpperCase());
+            }
+          }
+
+          const isHighlighted = matchingPointers.length > 0;
+          const pointerLabel = matchingPointers.join(", ");
+
+          const box = document.createElement("div");
+          box.className = "flex flex-col items-center gap-1.5";
+          
+          box.innerHTML = `
+            <span class="text-[10px] font-black text-amber-400 h-4 font-mono tracking-wider">${pointerLabel}</span>
+            <div class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl font-mono font-black text-sm border transition-all duration-200 ${
+              isHighlighted 
+                ? 'bg-gradient-to-b from-red-950 to-black border-amber-400 text-amber-300 glow-gold ring-2 ring-amber-400/80 scale-110 shadow-lg' 
+                : 'bg-[#121212] border-zinc-800 text-zinc-400'
+            }">${val === " " ? "␣" : val}</div>
+            <span class="text-[10px] text-zinc-500 font-mono font-semibold">[${i}]</span>
+          `;
+          container.appendChild(box);
+        });
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIdx < executionSteps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    // STRICT CANONICAL DEDUPLICATION IN HISTORY
+    function updateHistoryUI() {
+      const list = document.getElementById("history-list");
+      const count = document.getElementById("problem-count");
+
+      const uniqueMap = new Map();
+      userHistory.forEach(item => {
+        const normKey = normalizeProblemName(item.problem_name);
+        if (normKey && !["custom code", "algorithmic solver", "dsa problem"].includes(normKey)) {
+          uniqueMap.set(normKey, item);
+        }
+      });
+
+      const cleanHistory = Array.from(uniqueMap.values());
+      count.innerText = `${cleanHistory.length} Solved`;
+      list.innerHTML = "";
+
+      if (cleanHistory.length === 0) {
+        list.innerHTML = `<p class="text-zinc-500 italic text-[11px]">No problems in history yet for ${currentUsername}.</p>`;
+        return;
+      }
+
+      cleanHistory.reverse().forEach(item => {
+        const normKey = normalizeProblemName(item.problem_name);
+        const displayName = CANONICAL_TITLES[normKey] || item.problem_name;
+
+        const card = document.createElement("div");
+        card.className = "p-2.5 bg-[#090909] border border-zinc-800 rounded-xl flex justify-between items-center hover:border-amber-500/60 transition cursor-pointer";
+        card.onclick = () => loadHistoricalProblem(item);
+        card.innerHTML = `
+          <div>
+            <span class="font-semibold text-zinc-200 text-xs">${displayName}</span>
+            <p class="text-[10px] text-zinc-400">${item.topic} &bull; ${item.subtopic_pattern}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950 text-amber-300 border border-amber-500/40">${item.mastery_status || 'Mastered'}</span>
+            <span class="text-[10px] text-amber-400 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded hover:border-amber-400">Load</span>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // STRICT CANONICAL DEDUPLICATION IN MIND MAP
+    async function renderMindMap() {
+      const container = document.getElementById("mermaid-container");
+      
+      const uniqueProblemsMap = new Map();
+      userHistory.forEach(item => {
+        const normKey = normalizeProblemName(item.problem_name);
+        if (normKey && 
+            !["custom code", "algorithmic solver", "dsa problem"].includes(normKey) &&
+            item.topic && item.topic.toLowerCase() !== "dsa") {
+          uniqueProblemsMap.set(normKey, item);
+        }
+      });
+
+      const uniqueList = Array.from(uniqueProblemsMap.values());
+
+      if (uniqueList.length === 0) {
+        container.innerHTML = `<span class="text-xs font-mono text-zinc-600">Solve problems to build your mind map hierarchy</span>`;
+        return;
+      }
+
+      let chartDefinition = `graph LR\n  Root["${currentUsername.toUpperCase()}'s DSA Brain"]:::rootNode\n`;
+
+      const seenPatterns = new Set();
+      const seenTopics = new Set();
+
+      uniqueList.forEach((item, idx) => {
+        const normKey = normalizeProblemName(item.problem_name);
+        const displayName = CANONICAL_TITLES[normKey] || item.problem_name.replace(/[^a-zA-Z0-9 ]/g, "");
+
+        const t = (item.topic || "Arrays").replace(/[^a-zA-Z0-9]/g, "_");
+        const p = (item.subtopic_pattern || "Pointers").replace(/[^a-zA-Z0-9]/g, "_");
+
+        if (!seenTopics.has(t)) {
+          chartDefinition += `  Root --> T_${t}["${item.topic}"]:::topicNode\n`;
+          seenTopics.add(t);
+        }
+        if (!seenPatterns.has(`${t}_${p}`)) {
+          chartDefinition += `  T_${t} --> P_${t}_${p}["${item.subtopic_pattern}"]:::patternNode\n`;
+          seenPatterns.add(`${t}_${p}`);
+        }
+        chartDefinition += `  P_${t}_${p} --> N_${idx}["${displayName}"]:::probNode\n`;
+      });
+
+      chartDefinition += `
+        classDef rootNode fill:#450a0a,stroke:#f59e0b,stroke-width:2px,color:#fef08a,font-size:14px;
+        classDef topicNode fill:#18181b,stroke:#ca8a04,stroke-width:1px,color:#fef9c3,font-size:12px;
+        classDef patternNode fill:#090909,stroke:#71717a,stroke-width:1px,color:#d4d4d8,font-size:11px;
+        classDef probNode fill:#022c22,stroke:#10b981,stroke-width:1px,color:#6ee7b7,font-size:11px;
+      `;
+
+      container.removeAttribute('data-processed');
+      container.innerHTML = `<pre class="mermaid w-full h-full flex justify-start items-center">${chartDefinition}</pre>`;
+      mermaid.run({ nodes: [container.querySelector('.mermaid')] });
+    }
+  </script>
+</body>
+</html>
