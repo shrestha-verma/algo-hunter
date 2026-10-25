@@ -3,3 +3,4 @@ uvicorn
 openai
 python-dotenv
 tavily-python
+json-repair
